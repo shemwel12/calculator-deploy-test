@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a2e;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .calculator {
+      background: #16213e;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+      width: 320px;
+    }
+    .display {
+      background: #0f3460;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      text-align: right;
+    }
+    .display .expression {
+      color: #a0aec0;
+      font-size: 0.85rem;
+      min-height: 20px;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .display .result {
+      color: #e2e8f0;
+      font-size: 2.2rem;
+      font-weight: 300;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    button {
+      padding: 18px 0;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.1s;
+    }
+    button:active { transform: scale(0.94); opacity: 0.8; }
+    .btn-number   { background: #1a365d; color: #e2e8f0; }
+    .btn-operator { background: #2d3748; color: #63b3ed; }
+    .btn-equals   { background: #3182ce; color: #fff; grid-column: span 2; }
+    .btn-clear    { background: #742a2a; color: #fc8181; }
+    .btn-sign     { background: #2d3748; color: #e2e8f0; }
+    .btn-percent  { background: #2d3748; color: #e2e8f0; }
+    .btn-dot      { background: #1a365d; color: #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <div class="display">
+      <div class="expression" id="expression"></div>
+      <div class="result" id="result">0</div>
+    </div>
+    <div class="buttons">
+      <button class="btn-clear"    onclick="clear_()">AC</button>
+      <button class="btn-sign"     onclick="sign()">+/-</button>
+      <button class="btn-percent"  onclick="percent()">%</button>
+      <button class="btn-operator" onclick="op('/')">÷</button>
+
+      <button class="btn-number"   onclick="num('7')">7</button>
+      <button class="btn-number"   onclick="num('8')">8</button>
+      <button class="btn-number"   onclick="num('9')">9</button>
+      <button class="btn-operator" onclick="op('*')">×</button>
+
+      <button class="btn-number"   onclick="num('4')">4</button>
+      <button class="btn-number"   onclick="num('5')">5</button>
+      <button class="btn-number"   onclick="num('6')">6</button>
+      <button class="btn-operator" onclick="op('-')">−</button>
+
+      <button class="btn-number"   onclick="num('1')">1</button>
+      <button class="btn-number"   onclick="num('2')">2</button>
+      <button class="btn-number"   onclick="num('3')">3</button>
+      <button class="btn-operator" onclick="op('+')">+</button>
+
+      <button class="btn-number"   onclick="num('0')" style="grid-column:span 2; text-align:left; padding-left:24px;">0</button>
+      <button class="btn-dot"      onclick="dot()">.</button>
+      <button class="btn-equals"   onclick="equals()">=</button>
+    </div>
+  </div>
+
+  <script>
+    let current = '0', prev = '', operator = '', justEvaled = false;
+
+    const display    = () => document.getElementById('result').textContent = current;
+    const displayExp = (t) => document.getElementById('expression').textContent = t;
+
+    function num(n) {
+      if (justEvaled) { current = n; justEvaled = false; }
+      else current = current === '0' ? n : current + n;
+      display();
+    }
+
+    function dot() {
+      if (justEvaled) { current = '0.'; justEvaled = false; }
+      else if (!current.includes('.')) current += '.';
+      display();
+    }
+
+    function op(o) {
+      if (prev && operator && !justEvaled) equals(true);
+      prev = current; operator = o; justEvaled = false;
+      const sym = { '+':'+', '-':'−', '*':'×', '/':'÷' }[o];
+      displayExp(current + ' ' + sym);
+      current = '0';
+    }
+
+    function equals(silent = false) {
+      if (!prev || !operator) return;
+      const a = parseFloat(prev), b = parseFloat(current);
+      const sym = { '+':'+', '-':'−', '*':'×', '/':'÷' }[operator];
+      if (!silent) displayExp(prev + ' ' + sym + ' ' + current + ' =');
+      const map = { '+': a+b, '-': a-b, '*': a*b, '/': b !== 0 ? a/b : 'Error' };
+      current = String(parseFloat((map[operator]).toFixed(10)));
+      prev = ''; operator = ''; justEvaled = true;
+      display();
+    }
+
+    function clear_() {
+      current = '0'; prev = ''; operator = ''; justEvaled = false;
+      display(); displayExp('');
+    }
+
+    function sign()    { current = String(parseFloat(current) * -1); display(); }
+    function percent() { current = String(parseFloat(current) / 100); display(); }
+
+    // Keyboard support
+    document.addEventListener('keydown', e => {
+      if (e.key >= '0' && e.key <= '9') num(e.key);
+      else if (e.key === '.') dot();
+      else if (['+','-','*','/'].includes(e.key)) op(e.key);
+      else if (e.key === 'Enter' || e.key === '=') equals();
+      else if (e.key === 'Escape') clear_();
+      else if (e.key === 'Backspace') {
+        current = current.length > 1 ? current.slice(0,-1) : '0';
+        display();
+      }
+    });
+  </script>
+</body>
+</html>
